@@ -46,15 +46,15 @@ graph LR
     u3(AZUser3) -- AZMemberOf --> g5
     u3 -- AZMemberOf --> g3
 
-    P <--> t{Tenant}
+    P <--> t{AZTenant}
 ```
 
 ### Application Permissions
 
 ```mermaid
 graph LR
-    a1((AZServicePrincipal1)) -- AZMGUserAuthenticationMethod_ReadWrite_All --> t{Tenant}
-    a2((AZServicePrincipal2)) -- AZMGUserAuthenticationMethod_Passkey_ReadWrite_All --> t
+    a1(AZServicePrincipal1) -- AZMGUserAuthenticationMethod_ReadWrite_All --> t{AZTenant}
+    a2(AZServicePrincipal2) -- AZMGUserAuthenticationMethod_Passkey_ReadWrite_All --> t
     a2 -- AZMGPolicy_ReadWrite_AuthenticationMethod --> t
 
     u1(AZUser1) -- AZOwns --> a1
