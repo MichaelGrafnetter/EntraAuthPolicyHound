@@ -4,7 +4,7 @@
 
 ## Motivation
 
-This project provides a sample `PowerShell` script that collects Microsoft Entra ID permissions related
+This community project provides a sample `PowerShell` script that collects Microsoft Entra ID permissions related
 to [Temporary Access Passes (TAPs)](https://learn.microsoft.com/en-us/entra/identity/authentication/howto-authentication-temporary-access-pass)
 and [Passkeys (FIDO2)](https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-enable-passkey-fido2)
 and exports the data in [BloodHound OpenGraph](https://specterops.io/opengraph/) format.
@@ -31,8 +31,34 @@ and exports the data in [BloodHound OpenGraph](https://specterops.io/opengraph/)
 
 ## Nodes and Edges
 
-```mermaid
+### Authentication Method Policy
 
+```mermaid
+graph LR
+    g1((AZGroup1)) -- AZTapInclude --> P(AZAuthenticationMethodPolicy)
+    g2((AZGroup2)) -- AZTapExclude --> P
+    u1(AZUser1) -- AZMemberOf --> g1
+
+    g3((AZGroup3)) -- AZPasskeyInclude --> P(AZAuthenticationMethodPolicy)
+    g4((AZGroup4)) -- AZPasskeyExclude --> P
+    u2(AZUser2) -- AZMemberOf --> g3
+    g5((AZGroup5)) -- AZMemberOf --> g4
+    u3(AZUser3) -- AZMemberOf --> g5
+    u3 -- AZMemberOf --> g3
+
+    P <--> t{Tenant}
+```
+
+### Application Permissions
+
+```mermaid
+graph LR
+    a1((AZServicePrincipal1)) -- AZMGUserAuthenticationMethod_ReadWrite_All --> t{Tenant}
+    a2((AZServicePrincipal2)) -- AZMGUserAuthenticationMethod_Passkey_ReadWrite_All --> t
+    a2 -- AZMGPolicy_ReadWrite_AuthenticationMethod --> t
+
+    u1(AZUser1) -- AZOwns --> a1
+    u2(AZUser2) -- AZOwns --> a2
 ```
 
 ## Files
@@ -55,13 +81,28 @@ and exports the data in [BloodHound OpenGraph](https://specterops.io/opengraph/)
 
 ## Sample Cypher Queries
 
-Here are several sample Cypher queries related to Entra ID authentication method policies.
+Here are several sample Cypher queries related to Entra ID authentication method policies:
 
 ```cypher
-MATCH (n:AZAuthenticationMethodPolicy) RETURN n
+MATCH (n:AZAuthenticationPolicy) RETURN n
 ```
 
 ```cypher
-MATCH p=()-[:AZTapIncluded]-()
-RETURN p
+MATCH p=()-[:AZTapInclude]-() RETURN p
+```
+
+```cypher
+MATCH p=()-[:AZTapExclude]-() RETURN p
+```
+
+```cypher
+MATCH path=(policy:AZAuthenticationPolicy)<-[:AZTapExclude]-(group:AZGroup)<-[:AZMemberOf*1..]-(entity) RETURN path
+```
+
+```cypher
+MATCH p=()-[:AZMGUserAuthenticationMethod_ReadWrite_All]-() RETURN p
+```
+
+```cypher
+MATCH p=()-[:AZMGUserAuthenticationMethod_Passkey_ReadWrite_All]-() RETURN p
 ```

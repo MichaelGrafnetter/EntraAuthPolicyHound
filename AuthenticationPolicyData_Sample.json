@@ -1,7 +1,7 @@
 {
   "$schema": "bloodhound-opengraph.schema.json",
   "metadata": {
-    "source_kind": "Entra Authentication Method Sample"
+    "source_kind": "Michael"
   },
   "graph": {
     "nodes": [

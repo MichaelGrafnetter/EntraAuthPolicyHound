@@ -1,0 +1,15 @@
+# editorconfig.org
+
+# Top-most EditorConfig file
+root = true
+
+# Default settings:
+[*]
+insert_final_newline = true
+indent_style = space
+trim_trailing_whitespace = true
+indent_size = 2
+
+# PowerShell files
+[*{.ps1;*.psm1}]
+indent_size = 4

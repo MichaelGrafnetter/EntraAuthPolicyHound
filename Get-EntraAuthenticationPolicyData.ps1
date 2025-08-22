@@ -21,7 +21,7 @@ using module '.\BloodHound.OpenGraph.Model.psm1'
 Set-StrictMode -Version Latest
 
 # Data source identifier for BloodHound OpenGraph
-[string] $openGraphSourceKind = 'Michael'
+[string] $openGraphSourceKind = 'EntraTapPasskey'
 
 # Authenticate
 Write-Verbose -Message 'Connecting to Microsoft Graph...' -Verbose
