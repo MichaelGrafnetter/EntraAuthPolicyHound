@@ -1,0 +1,79 @@
+{
+  "$schema": "bloodhound-opengraph.schema.json",
+  "metadata": {
+    "source_kind": "Entra Authentication Method Sample"
+  },
+  "graph": {
+    "nodes": [
+      {
+        "id": "AZAuthenticationPolicy@996af01c-adef-43b6-af73-7ae92866441e",
+        "properties": {
+          "name": "AZAuthenticationPolicy",
+          "passkeyEnabled": true,
+          "passkeyIncludesAllUsers": true,
+          "tapIncludesAllUsers": true,
+          "tapEnabled": true,
+          "displayname": "Entra ID Authentication Method Policy",
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+        },
+        "kinds": [
+          "AZAuthenticationPolicy",
+          "AZBase"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "kind": "AZTapExclude",
+        "start": {
+          "value": "83b26a09-16e4-4a48-b95d-b6b22bdef442",
+          "match_by": "id",
+          "kind": "AZGroup"
+        },
+        "end": {
+          "value": "AZAuthenticationPolicy@996af01c-adef-43b6-af73-7ae92866441e",
+          "match_by": "id",
+          "kind": "AZAuthenticationPolicy"
+        },
+        "properties": {
+          "displayname": "Temporary Access Pass Excluded",
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+        }
+      },
+      {
+        "kind": "AZMGUserAuthenticationMethod_ReadWrite_All",
+        "start": {
+          "value": "73b267c7-0964-41bd-b763-a89e5ef91ec5",
+          "match_by": "id",
+          "kind": "AZServicePrincipal"
+        },
+        "end": {
+          "value": "996af01c-adef-43b6-af73-7ae92866441e",
+          "match_by": "id",
+          "kind": "AZTenant"
+        },
+        "properties": {
+          "displayname": "Microsoft Graph UserAuthenticationMethod.ReadWrite.All Application Permission",
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+        }
+      },
+      {
+        "kind": "AZMGUserAuthenticationMethod_Passkey_ReadWrite_All",
+        "start": {
+          "value": "73b267c7-0964-41bd-b763-a89e5ef91ec5",
+          "match_by": "id",
+          "kind": "AZServicePrincipal"
+        },
+        "end": {
+          "value": "996af01c-adef-43b6-af73-7ae92866441e",
+          "match_by": "id",
+          "kind": "AZTenant"
+        },
+        "properties": {
+          "displayname": "Microsoft Graph UserAuthenticationMethod-Passkey.ReadWrite.All Application Permission",
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+        }
+      }
+    ]
+  }
+}
