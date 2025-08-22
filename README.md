@@ -4,7 +4,7 @@
 
 ## Motivation
 
-This community project provides a sample `PowerShell` script that collects Microsoft Entra ID permissions related
+This PoC community project provides a sample `PowerShell` script that collects Microsoft Entra ID permissions related
 to [Temporary Access Passes (TAPs)](https://learn.microsoft.com/en-us/entra/identity/authentication/howto-authentication-temporary-access-pass)
 and [Passkeys (FIDO2)](https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-enable-passkey-fido2)
 and exports the data in [BloodHound OpenGraph](https://specterops.io/opengraph/) format.
@@ -60,6 +60,17 @@ graph LR
     u1(AZUser1) -- AZOwns --> a1
     u2(AZUser2) -- AZOwns --> a2
 ```
+
+### Privileged Roles
+
+The following privileged roles are related to TAPs and Passkeys:
+
+* [Global Administrator](https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#global-administrator)
+* [Authentication Policy Administrator](https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#authentication-policy-administrator)
+* [Privileged Authentication Administrator](https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#privileged-authentication-administrator)
+* [Authentication Administrator](https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#authentication-administrator)
+
+Assignments to these roles are collected by [AzureHound](https://github.com/SpecterOps/AzureHound) out-of-the-box.
 
 ## Files
 
