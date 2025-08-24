@@ -12,7 +12,7 @@
 #>
 
 #Requires -Version 5.1
-#Requires -Modules Microsoft.Graph.Identity.SignIns, Microsoft.Graph.Authentication
+#Requires -Modules Microsoft.Graph.Identity.SignIns, Microsoft.Graph.Authentication, Microsoft.Graph.Applications
 
 # Import the BloodHound OpenGraph data model
 using module '.\BloodHound.OpenGraph.Model.psm1'
