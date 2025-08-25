@@ -241,6 +241,15 @@ class AZGroup : AZBase
     }
 }
 
+# Entra ID role
+class AZRole : AZBase
+{
+    # Role IDs are scoped to the tenant, so we combine the role template ID and tenant ID to create a unique node ID
+    AZRole([guid] $templateId, [guid] $tenantId) : base("$templateId@$tenantId", $tenantId, 'AZRole')
+    {
+    }
+}
+
 # Entra ID service principal
 class AZServicePrincipal : AZBase
 {
@@ -328,6 +337,14 @@ class AZPasskeyExclude : AZEdge
     AZPasskeyExclude([AZAuthenticationPolicy] $policy, [AZGroup] $excludeTarget) : base($excludeTarget, $policy, 'AZPasskeyExclude')
     {
         $this.SetDisplayName('Passkey Excluded')
+    }
+}
+
+class AZChangeAuthenticationPolicy : AZEdge
+{
+    AZChangeAuthenticationPolicy([AZBase] $entity, [AZAuthenticationPolicy] $authenticationPolicy) : base($entity, $authenticationPolicy, 'AZChangeAuthenticationPolicy')
+    {
+        $this.SetDisplayName('Can change Authentication Method Policy')
     }
 }
 

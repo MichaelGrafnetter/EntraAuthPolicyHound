@@ -99,6 +99,10 @@ MATCH (n:AZAuthenticationPolicy) RETURN n
 ```
 
 ```cypher
+MATCH p=()-[:AZChangeAuthenticationPolicy]-() RETURN p
+```
+
+```cypher
 MATCH p=()-[:AZTapInclude]-() RETURN p
 ```
 

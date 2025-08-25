@@ -9,6 +9,11 @@
     - Policy.Read.AuthenticationMethod
     - Application.Read.All
     Less granular permissions are also available.
+
+.NOTES
+    Version: 1.1
+    Author: Michael Grafnetter
+
 #>
 
 #Requires -Version 5.1
@@ -155,9 +160,25 @@ for ($i = 0; $i -lt $servicePrincipals.Count; $i++) {
         } elseif ($permission -eq $manageAuthenticationPolicyPermissionId) {
             # The app has the Policy.ReadWrite.AuthenticationMethod permission
             $openGraph.AddEdge([AZMGPolicy_ReadWrite_AuthenticationMethod]::new($servicePrincipalNode, $tenantNode))
+
+            # In addition to the AZServicePrincipal->AZTenant edge, we also create a AZServicePrincipal->AZAuthenticationPolicy edge.
+            $openGraph.AddEdge([AZChangeAuthenticationPolicy]::new($servicePrincipalNode, $authenticationPolicy))
         }
     }
 }
+
+# Create a single AZChangeAuthenticationPolicy edge from the "Authentication Policy Administrator" role to the AZAuthenticationPolicy node.
+[guid] $authenticationPolicyAdminRoleTemplateId = '0526716b-113d-4c15-b2c8-68e3c22b9f80'
+[AZRole] $authenticationPolicyAdminRole = [AZRole]::new($authenticationPolicyAdminRoleTemplateId, $tenantId)
+[Edge] $changeAuthPolicyEdge = [AZChangeAuthenticationPolicy]::new($authenticationPolicyAdminRole, $authenticationPolicy)
+$openGraph.AddEdge($changeAuthPolicyEdge)
+
+# Create a single AZChangeAuthenticationPolicy edge from the "Global Administrator" role to the AZAuthenticationPolicy node.
+# This is here just for completeness, as Global Admins can do everything.
+[guid] $globalAdminRoleTemplateId = '62e90394-69f5-4237-9190-012177145e10'
+[AZRole] $globalAdminRole = [AZRole]::new($globalAdminRoleTemplateId, $tenantId)
+[Edge] $changeAuthPolicyEdgeGlobal = [AZChangeAuthenticationPolicy]::new($globalAdminRole, $authenticationPolicy)
+$openGraph.AddEdge($changeAuthPolicyEdgeGlobal)
 
 # Disconnect from Microsoft Graph
 Write-Progress -Activity $activity -Completed

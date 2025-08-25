@@ -1,7 +1,7 @@
 {
   "$schema": "bloodhound-opengraph.schema.json",
   "metadata": {
-    "source_kind": "Michael"
+    "source_kind": "EntraTapPasskey"
   },
   "graph": {
     "nodes": [
@@ -41,6 +41,40 @@
         }
       },
       {
+        "kind": "AZMGPolicy_ReadWrite_AuthenticationMethod",
+        "start": {
+          "value": "73b267c7-0964-41bd-b763-a89e5ef91ec5",
+          "match_by": "id",
+          "kind": "AZServicePrincipal"
+        },
+        "end": {
+          "value": "996af01c-adef-43b6-af73-7ae92866441e",
+          "match_by": "id",
+          "kind": "AZTenant"
+        },
+        "properties": {
+          "displayname": "Microsoft Graph Policy.ReadWrite.AuthenticationMethod Application Permission",
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+        }
+      },
+      {
+        "kind": "AZChangeAuthenticationPolicy",
+        "start": {
+          "value": "73b267c7-0964-41bd-b763-a89e5ef91ec5",
+          "match_by": "id",
+          "kind": "AZServicePrincipal"
+        },
+        "end": {
+          "value": "AZAuthenticationPolicy@996af01c-adef-43b6-af73-7ae92866441e",
+          "match_by": "id",
+          "kind": "AZAuthenticationPolicy"
+        },
+        "properties": {
+          "displayname": "Can change Authentication Method Policy",
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+        }
+      },
+      {
         "kind": "AZMGUserAuthenticationMethod_ReadWrite_All",
         "start": {
           "value": "73b267c7-0964-41bd-b763-a89e5ef91ec5",
@@ -71,6 +105,40 @@
         },
         "properties": {
           "displayname": "Microsoft Graph UserAuthenticationMethod-Passkey.ReadWrite.All Application Permission",
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+        }
+      },
+      {
+        "kind": "AZChangeAuthenticationPolicy",
+        "start": {
+          "value": "0526716b-113d-4c15-b2c8-68e3c22b9f80@996af01c-adef-43b6-af73-7ae92866441e",
+          "match_by": "id",
+          "kind": "AZRole"
+        },
+        "end": {
+          "value": "AZAuthenticationPolicy@996af01c-adef-43b6-af73-7ae92866441e",
+          "match_by": "id",
+          "kind": "AZAuthenticationPolicy"
+        },
+        "properties": {
+          "displayname": "Can change Authentication Method Policy",
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+        }
+      },
+      {
+        "kind": "AZChangeAuthenticationPolicy",
+        "start": {
+          "value": "62e90394-69f5-4237-9190-012177145e10@996af01c-adef-43b6-af73-7ae92866441e",
+          "match_by": "id",
+          "kind": "AZRole"
+        },
+        "end": {
+          "value": "AZAuthenticationPolicy@996af01c-adef-43b6-af73-7ae92866441e",
+          "match_by": "id",
+          "kind": "AZAuthenticationPolicy"
+        },
+        "properties": {
+          "displayname": "Can change Authentication Method Policy",
           "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
         }
       }
