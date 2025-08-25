@@ -117,11 +117,9 @@ graph LR
     a1(AZServicePrincipal1) -- AZMGUserAuthenticationMethod_ReadWrite_All --> t{AZTenant}
     a2(AZServicePrincipal2) -- AZMGUserAuthenticationMethod_Passkey_ReadWrite_All --> t
     a2 -- AZMGPolicy_ReadWrite_AuthenticationMethod --> t
-    r1(Authentication Policy Administrator) -- 
 
     u1(AZUser1) -- AZOwns --> a1
     u2(AZUser2) -- AZOwns --> a2
-    u3(AZUser3) -- AZHasRole --> r1
 ```
 
 ### Privileged Roles
