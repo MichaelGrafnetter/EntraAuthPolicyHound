@@ -1,0 +1,11 @@
+{
+    "custom_types" : {
+        "AZAuthenticationPolicy" : {
+            "icon" : {
+                "color": "#3a5d9c",
+                "name": "file-shield",
+                "type": "font-awesome"
+            }
+        }
+    }
+}
