@@ -5,20 +5,50 @@
 [![PowerShell 5.1 or 7](https://badgen.net/badge/icon/5.1%20|%207?icon=terminal&label=PowerShell)](#)
 [![Apache 2.0 License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
 
-## Motivation
+## Introduction
+
+### Motivation
 
 This PoC community project provides a sample `PowerShell` script that collects Microsoft Entra ID permissions related
 to [Temporary Access Passes (TAPs)](https://learn.microsoft.com/en-us/entra/identity/authentication/howto-authentication-temporary-access-pass)
-and [Passkeys (FIDO2)](https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-enable-passkey-fido2)
+and [Passkeys (FIDO2 security keys or mobile devices)](https://learn.microsoft.com/en-us/entra/identity/authentication/how-to-enable-passkey-fido2)
 and exports the data in [BloodHound OpenGraph](https://specterops.io/opengraph/) format.
 
-Temporary Access Passes (TAPs) and Passkeys (FIDO2 security keys) can be registered by privileged malicious actors for other users.
+TAPs and Passkeys can be registered by privileged malicious actors for other users.
 By authenticating with one of these methods afterwards, they can bypass MFA requirements and perform privilege elevation.
 This is in principle similar to the [AZResetPassword] edge, but with stronger requirements and more serious impact,
 but also more attractive to adversaries as it doesn’t result in the target user losing their ability to authenticate themselves with a password they know.
 
 These authentication methods are disabled by default in the tenant,
 so they must be enabled first by a legitimate admin or the malicious actor, if they have the right permissions.
+
+### Authentication Method Registration
+
+TAPs can easily be created for other users by using the [Microsoft Entra admin center](https://entra.microsoft.com),
+Microsoft Graph API, or PowerShell:
+
+```powershell
+New-MgUserAuthenticationTemporaryAccessPassMethod `
+     -UserId 'john.doe@contoso.com' `
+     -IsUsableOnce `
+     -LifetimeInMinutes 60 | Format-List
+```
+
+Sample output:
+
+```yml
+Id: 00aa00aa-bb11-cc22-dd33-44ee44ee44ee
+CreatedDateTime: 5/22/2022 11:19:17 PM
+IsUsable: True
+IsUsableOnce: True
+LifetimeInMinutes: 60
+TemporaryAccessPass: TAPRocks!
+```
+
+However, a 3rd-party tool is required to perform administrative registration of Passkeys.
+One such utility is the [DSInternals.Passkeys](https://www.powershellgallery.com/packages/DSInternals.Passkeys) PowerShell module:
+
+![PowerShell Passkey Registration Screenshot](Screenshots/passkey-registration.png)
 
 ## Author
 
@@ -30,7 +60,7 @@ so they must be enabled first by a legitimate admin or the malicious actor, if t
 
 ## Collected Data
 
-The following data is colelcted by the PowerShell script from an Entra ID tenant:
+The following data is collected by the [Get-EntraAuthenticationPolicyData.ps1] PowerShell script from an Entra ID tenant:
 
 ### Temporary Access Pass Authentication Method Policy
 
@@ -207,7 +237,7 @@ graph LR
 
 ## Required Entra ID Permissions
 
-The PowerShell script reads authentication method policies and service principal permissions.
+The [Get-EntraAuthenticationPolicyData.ps1] PowerShell script reads authentication method policies and service principal permissions.
 It therefore requires the following Microsoft Graph delegated permissions (OAuth scopes):
 
 * [Policy.Read.AuthenticationMethod]
@@ -281,7 +311,7 @@ MATCH p=(:AZGroup)-[:AZTapInclude|AZTapExclude|AZPasskeyInclude|AZPasskeyExclude
 ```
 
 > [!Warning]
-> This query may fail if no edge of a given type, e.g., [AZTapInclude], exists.
+> This query may fail if no edge of a given kind, e.g., [AZTapInclude], exists.
 
 Show the authentication method policy user inclusions and exclusions, while considering nested group membership:
 
@@ -323,7 +353,7 @@ Data import would otherwise fail with an error concerning duplicate nodes. This 
 
 Non-trivial post-processing of the ingested data would be required
 to determine who can register TAPs and Passkeys for whom,
-similarly to the [AZResetPassword](https://bloodhound.specterops.io/resources/edges/az-reset-password) edge, especially for the [Authentication Administrator] role delegated at the administrative unit level.
+similarly to the [AZResetPassword] edge, especially for the [Authentication Administrator] role delegated at the administrative unit level.
 This capability is not available in the current version of BloodHound.
 
 ### Processing Speed
@@ -351,6 +381,7 @@ A progress bar is therefore displayed. When the script is executed in PowerShell
 [AZGroup]: https://bloodhound.specterops.io/resources/nodes/az-group
 [AZServicePrincipal]: https://bloodhound.specterops.io/resources/nodes/az-service-principal
 [AZRole]: https://bloodhound.specterops.io/resources/nodes/az-role
+[AZResetPassword]: https://bloodhound.specterops.io/resources/edges/az-reset-password
 [AZTapInclude]: #aztapinclude-edge
 [AZTapExclude]: #aztapexclude-edge
 [AZPasskeyInclude]: #azpasskeyinclude-edge
