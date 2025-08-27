@@ -8,13 +8,13 @@
       {
         "id": "AZAuthenticationPolicy@996af01c-adef-43b6-af73-7ae92866441e",
         "properties": {
-          "name": "AZAuthenticationPolicy",
-          "passkeyEnabled": true,
-          "passkeyIncludesAllUsers": true,
           "tapIncludesAllUsers": true,
-          "tapEnabled": true,
+          "passkeyIncludesAllUsers": true,
           "displayname": "Entra ID Authentication Method Policy",
-          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+          "tapEnabled": true,
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e",
+          "name": "AZAuthenticationPolicy@lab.dsinternals.com",
+          "passkeyEnabled": true
         },
         "kinds": [
           "AZAuthenticationPolicy",
@@ -36,8 +36,8 @@
           "kind": "AZAuthenticationPolicy"
         },
         "properties": {
-          "displayname": "Temporary Access Pass Excluded",
-          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e",
+          "displayname": "Temporary Access Pass Excluded"
         }
       },
       {
@@ -53,8 +53,8 @@
           "kind": "AZTenant"
         },
         "properties": {
-          "displayname": "Microsoft Graph Policy.ReadWrite.AuthenticationMethod Application Permission",
-          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e",
+          "displayname": "Microsoft Graph Policy.ReadWrite.AuthenticationMethod Application Permission"
         }
       },
       {
@@ -70,8 +70,9 @@
           "kind": "AZAuthenticationPolicy"
         },
         "properties": {
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e",
           "displayname": "Can change Authentication Method Policy",
-          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+          "description": "The application is assigned the Policy.ReadWrite.AuthenticationMethod permission."
         }
       },
       {
@@ -87,8 +88,8 @@
           "kind": "AZTenant"
         },
         "properties": {
-          "displayname": "Microsoft Graph UserAuthenticationMethod.ReadWrite.All Application Permission",
-          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e",
+          "displayname": "Microsoft Graph UserAuthenticationMethod.ReadWrite.All Application Permission"
         }
       },
       {
@@ -104,8 +105,8 @@
           "kind": "AZTenant"
         },
         "properties": {
-          "displayname": "Microsoft Graph UserAuthenticationMethod-Passkey.ReadWrite.All Application Permission",
-          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e",
+          "displayname": "Microsoft Graph UserAuthenticationMethod-Passkey.ReadWrite.All Application Permission"
         }
       },
       {
@@ -121,8 +122,9 @@
           "kind": "AZAuthenticationPolicy"
         },
         "properties": {
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e",
           "displayname": "Can change Authentication Method Policy",
-          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+          "description": "Members of the \"Authentication Policy Administrator\" role can manage authentication method policies, including TAP and Passkey settings."
         }
       },
       {
@@ -138,8 +140,9 @@
           "kind": "AZAuthenticationPolicy"
         },
         "properties": {
+          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e",
           "displayname": "Can change Authentication Method Policy",
-          "tenantid": "996af01c-adef-43b6-af73-7ae92866441e"
+          "description": "Members of the \"Global Administrator\" role can manage authentication method policies, including TAP and Passkey settings."
         }
       }
     ]

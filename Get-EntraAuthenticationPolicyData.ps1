@@ -11,7 +11,7 @@
     Less granular permissions are also available.
 
 .NOTES
-    Version: 1.1
+    Version: 1.2
     Author: Michael Grafnetter
 
 #>
@@ -37,15 +37,19 @@ Connect-MgGraph `
     -NoWelcome
 
 # Get info about the current tenant
-Write-Verbose -Message 'Fetching Tenant ID...' -Verbose
-[Microsoft.Graph.PowerShell.Authentication.AuthContext] $context = Get-MgContext
-[guid] $tenantId = $context.TenantId
-[AZTenant] $tenantNode = [AZTenant]::new($tenantId)
+Write-Verbose -Message 'Fetching tenant ID and name...' -Verbose
+[Microsoft.Graph.PowerShell.Models.MicrosoftGraphOrganization] $organization = Get-MgOrganization -Property Id,VerifiedDomains
+[guid] $tenantId = $organization.Id
+[string] $tenantPrimaryDomain =
+    $organization.VerifiedDomains |
+    Where-Object IsDefault -eq $true |
+    Select-Object -ExpandProperty Name
 
 # Initialize BloodHound OpenGraph
 [BloodHoundOpenGraph] $openGraph = [BloodHoundOpenGraph]::new($openGraphSourceKind)
-[AZAuthenticationPolicy] $authenticationPolicy = [AZAuthenticationPolicy]::new($tenantId)
+[AZAuthenticationPolicy] $authenticationPolicy = [AZAuthenticationPolicy]::new($tenantId, $tenantPrimaryDomain)
 $openGraph.AddNode($authenticationPolicy)
+[AZTenant] $tenantNode = [AZTenant]::new($tenantId)
 
 # Get TAP settings
 Write-Verbose -Message 'Retrieving TAP policy...' -Verbose
@@ -126,43 +130,43 @@ if ($null -ne $passkeyPolicy.excludeTargets) {
 # Policy.ReadWrite.AuthenticationMethod application permission ID:
 [guid] $manageAuthenticationPolicyPermissionId = '29c18626-4985-4dcd-85c0-193eef327366'
 
+# Fetch all service principal identifiers and application permissions
+Write-Verbose -Message 'Retrieving service principal permissions...' -Verbose
+[Microsoft.Graph.PowerShell.Models.MicrosoftGraphServicePrincipal[]] $servicePrincipals = Get-MgServicePrincipal -All -Property Id,AppId -ExpandProperty AppRoleAssignments
+
 # Hardcoded App ID of the Microsoft Graph application
 # Note: As an alternative, the Microsoft Graph App ID could be fetched dynamically
-Write-Verbose -Message 'Retrieving Microsoft Graph service principal...' -Verbose
 [guid] $microsoftGraphAppId = '00000003-0000-0000-c000-000000000000'
-[guid] $microsoftGraphServicePrincipalId = (Get-MgServicePrincipal -Filter "appId eq '$microsoftGraphAppId'" -Property Id).Id
+[guid] $microsoftGraphServicePrincipalId =
+    $servicePrincipals |
+    Where-Object AppId -eq $microsoftGraphAppId |
+    Select-Object -ExpandProperty Id
 
-# Fetch all service principal identifiers
-Write-Verbose -Message 'Retrieving all service principals...' -Verbose
-[guid[]] $servicePrincipals = Get-MgServicePrincipal -All -Property Id | Select-Object -ExpandProperty Id
-[string] $activity = 'Processing service principal permissions...'
-
-for ($i = 0; $i -lt $servicePrincipals.Count; $i++) {
-    # This loop can take a while in large tenants, so we provide some progress feedback
-    Write-Progress -Activity $activity -PercentComplete (($i / $servicePrincipals.Count) * 100)
-
+foreach ($servicePrincipal in $servicePrincipals) {
     # Prepare the service principal graph node for possible edges
-    [AZServicePrincipal] $servicePrincipalNode = [AZServicePrincipal]::new($servicePrincipals[$i], $tenantId)
+    [AZServicePrincipal] $servicePrincipalNode = [AZServicePrincipal]::new($servicePrincipal.Id, $tenantId)
 
-    # Fetch all Microsoft Graph permission grants for the service principal
-    [guid[]] $applicationPermissions =
-        Get-MgServicePrincipalAppRoleAssignment -ServicePrincipalId $servicePrincipals[$i] -All -Filter "resourceId eq $microsoftGraphServicePrincipalId" -Property AppRoleId |
-        Select-Object -ExpandProperty AppRoleId
+    foreach ($permission in $servicePrincipal.AppRoleAssignments) {
+        if ($permission.ResourceId -ne $microsoftGraphServicePrincipalId) {
+            # The permission is not assigned for the Microsoft Graph application
+            continue
+        }
 
-    # Check if the app has any permissions related to TAPs or Passkeys
-    foreach ($permission in $applicationPermissions) {
-        if ($permission -eq $manageUserAuthenticationMethodsPermissionId) {
+        # Check if the app has any permissions related to TAPs or Passkeys
+        if ($permission.AppRoleId -eq $manageUserAuthenticationMethodsPermissionId) {
             # The app has the UserAuthenticationMethod.ReadWrite.All permission
             $openGraph.AddEdge([AZMGUserAuthenticationMethod_ReadWrite_All]::new($servicePrincipalNode, $tenantNode))
-        } elseif ($permission -eq $manageUserPasskeysPermissionId) {
+        } elseif ($permission.AppRoleId -eq $manageUserPasskeysPermissionId) {
             # The app has the UserAuthMethod-Passkey.ReadWrite.All permission
             $openGraph.AddEdge([AZMGUserAuthenticationMethod_Passkey_ReadWrite_All]::new($servicePrincipalNode, $tenantNode))
-        } elseif ($permission -eq $manageAuthenticationPolicyPermissionId) {
+        } elseif ($permission.AppRoleId -eq $manageAuthenticationPolicyPermissionId) {
             # The app has the Policy.ReadWrite.AuthenticationMethod permission
             $openGraph.AddEdge([AZMGPolicy_ReadWrite_AuthenticationMethod]::new($servicePrincipalNode, $tenantNode))
 
             # In addition to the AZServicePrincipal->AZTenant edge, we also create a AZServicePrincipal->AZAuthenticationPolicy edge.
-            $openGraph.AddEdge([AZChangeAuthenticationPolicy]::new($servicePrincipalNode, $authenticationPolicy))
+            [Edge] $edge = [AZChangeAuthenticationPolicy]::new($servicePrincipalNode, $authenticationPolicy)
+            $edge.SetDescription('The application is assigned the Policy.ReadWrite.AuthenticationMethod permission.')
+            $openGraph.AddEdge($edge)
         }
     }
 }
@@ -170,18 +174,19 @@ for ($i = 0; $i -lt $servicePrincipals.Count; $i++) {
 # Create a single AZChangeAuthenticationPolicy edge from the "Authentication Policy Administrator" role to the AZAuthenticationPolicy node.
 [guid] $authenticationPolicyAdminRoleTemplateId = '0526716b-113d-4c15-b2c8-68e3c22b9f80'
 [AZRole] $authenticationPolicyAdminRole = [AZRole]::new($authenticationPolicyAdminRoleTemplateId, $tenantId)
-[Edge] $changeAuthPolicyEdge = [AZChangeAuthenticationPolicy]::new($authenticationPolicyAdminRole, $authenticationPolicy)
-$openGraph.AddEdge($changeAuthPolicyEdge)
+[Edge] $authenticationPolicyAdminEdge = [AZChangeAuthenticationPolicy]::new($authenticationPolicyAdminRole, $authenticationPolicy)
+$authenticationPolicyAdminEdge.SetDescription('Members of the "Authentication Policy Administrator" role can manage authentication method policies, including TAP and Passkey settings.')
+$openGraph.AddEdge($authenticationPolicyAdminEdge)
 
 # Create a single AZChangeAuthenticationPolicy edge from the "Global Administrator" role to the AZAuthenticationPolicy node.
 # This is here just for completeness, as Global Admins can do everything.
 [guid] $globalAdminRoleTemplateId = '62e90394-69f5-4237-9190-012177145e10'
 [AZRole] $globalAdminRole = [AZRole]::new($globalAdminRoleTemplateId, $tenantId)
-[Edge] $changeAuthPolicyEdgeGlobal = [AZChangeAuthenticationPolicy]::new($globalAdminRole, $authenticationPolicy)
-$openGraph.AddEdge($changeAuthPolicyEdgeGlobal)
+[Edge] $globalAdminEdge = [AZChangeAuthenticationPolicy]::new($globalAdminRole, $authenticationPolicy)
+$globalAdminEdge.SetDescription('Members of the "Global Administrator" role can manage authentication method policies, including TAP and Passkey settings.')
+$openGraph.AddEdge($globalAdminEdge)
 
 # Disconnect from Microsoft Graph
-Write-Progress -Activity $activity -Completed
 Write-Verbose -Message 'Disconnecting from Microsoft Graph...' -Verbose
 Disconnect-MgGraph | Out-Null
 

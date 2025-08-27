@@ -156,6 +156,11 @@ class Edge
     {
         $this.properties['displayname'] = $displayName
     }
+
+    [void] SetDescription([string] $description)
+    {
+        $this.properties['description'] = $description
+    }
 }
 
 # Represents the start and end vertices of an edge
@@ -272,10 +277,10 @@ class AZTenant : AZBase
 # Entra ID Authentication Method Policy
 class AZAuthenticationPolicy : AZBase
 {
-    AZAuthenticationPolicy([guid] $tenantId) : base('AZAuthenticationPolicy@' + $tenantId, $tenantId, 'AZAuthenticationPolicy')
+    AZAuthenticationPolicy([guid] $tenantId, [string] $tenantName) : base("AZAuthenticationPolicy@$tenantId", $tenantId, 'AZAuthenticationPolicy')
     {
         $this.SetDisplayName('Entra ID Authentication Method Policy')
-        $this.SetName('AZAuthenticationPolicy')
+        $this.SetName("AZAuthenticationPolicy@$tenantName")
 
         # Default policy settings
         $this.SetTapEnabled($false)

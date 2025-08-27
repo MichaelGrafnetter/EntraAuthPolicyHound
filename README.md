@@ -317,7 +317,7 @@ Show the authentication method policy user inclusions and exclusions, while cons
 
 ```cypher
 MATCH directAssignment=(:AZGroup)-[:AZTapInclude|AZTapExclude|AZPasskeyInclude|AZPasskeyExclude]->(:AZAuthenticationPolicy)
-MATCH nestedMembership=(:AZUser)-[:AZMemberOf*1..]->(:AZGroup)-[:AZTapInclude|AZTapExclude|AZPasskeyInclude|AZPasskeyExclude]->(:AZAuthenticationPolicy)
+MATCH nestedMembership=(:AZBase)-[:AZMemberOf*1..]->(:AZGroup)-[:AZTapInclude|AZTapExclude|AZPasskeyInclude|AZPasskeyExclude]->(:AZAuthenticationPolicy)
 RETURN directAssignment,nestedMembership
 ```
 
@@ -355,15 +355,6 @@ Non-trivial post-processing of the ingested data would be required
 to determine who can register TAPs and Passkeys for whom,
 similarly to the [AZResetPassword] edge, especially for the [Authentication Administrator] role delegated at the administrative unit level.
 This capability is not available in the current version of BloodHound.
-
-### Processing Speed
-
-Determining application permissions is a slow process, requiring a Graph API call for each service principal.
-A progress bar is therefore displayed. When the script is executed in PowerShell 7, the API requests are parallelized, which improves the throughput.
-
-> [!Note]
-> Suggestions leading to further performance improvements are welcome.
-
 
 [UserAuthenticationMethod.ReadWrite.All]: https://learn.microsoft.com/en-us/graph/permissions-reference#userauthenticationmethodreadwriteall
 [UserAuthMethod-Passkey.ReadWrite.All]: https://learn.microsoft.com/en-us/graph/permissions-reference#userauthmethod-passkeyreadwriteall
