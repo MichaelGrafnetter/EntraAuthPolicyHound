@@ -444,14 +444,14 @@ Data import would otherwise fail with an error concerning duplicate nodes. This 
 
 The [Authentication Administrator] role is not yet supported by the [Get-EntraAuthenticationPolicyData.ps1] PowerShell script, as its logic is harder to implement. The following built-in roles are considered unprivileged by Entra and [Authentication Administrators] can change their authentication methods:
 
-* Authentication Administrator
-* Directory Reader
-* Guest Inviter
-* Message Center Reader
-* Password Administrator
-* Reports Reader
-* User Experience Success Manager
-* Usage Summary Reports Reader
+* [Authentication Administrator]
+* [Directory Readers]
+* [Guest Inviter]
+* [Message Center Reader]
+* [Password Administrator]
+* [Reports Reader]
+* [User Experience Success Manager]
+* [Usage Summary Reports Reader]
 
 If a user is a member of any other built-in or custom role or is a member or owner of a role-assignable group or has a role scoped to a restricted management administrative unit, then [Authentication Administrators] have no control over them, but [Privileged Authentication Administrators] still do. This behavior is similar to [AZResetPassword].
 
@@ -495,6 +495,12 @@ Such edge composition is not yet implemented in this tool, but could be discover
 [Global Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#global-administrator
 [Global Administrators]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#global-administrator
 [Directory Readers]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#directory-readers
+[Guest Inviter]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#guest-inviter
+[Message Center Reader]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#message-center-reader
+[Password Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#password-administrator
+[Reports Reader]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#reports-reader
+[User Experience Success Manager]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#user-experience-success-manager
+[Usage Summary Reports Reader]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#usage-summary-reports-reader
 [Authentication Policy Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#authentication-policy-administrator
 [Authentication Policy Administrators]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#authentication-policy-administrator
 [Privileged Authentication Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#privileged-authentication-administrator
