@@ -80,6 +80,10 @@ The following data is collected by the [Get-EntraAuthenticationPolicyData.ps1] P
 - [UserAuthMethod-Passkey.ReadWrite.All]
 - [Policy.ReadWrite.AuthenticationMethod]
 
+### Transitive Group Membership
+
+- [microsoft.graph.user.id](https://learn.microsoft.com/en-us/graph/api/group-list-transitivemembers?view=graph-rest-1.0&tabs=http)
+
 ## Nodes and Edges
 
 The following new nodes and edges are created based on the data collected:
@@ -99,12 +103,24 @@ Only a subset of the available settings is ingested into BloodHound. The followi
 | passkeyEnabled          | Indicates whether the Passkey authentication method is enabled in the tenant.               |
 | passkeyIncludesAllUsers | Indicates whether all users are enabled to use Passkeys.                                    |
 
+### AZUser Node
+
+The following new **boolean** properties are added to pre-existing [AZUser] nodes:
+
+| Property                | Description                                                                                 |
+|-------------------------|---------------------------------------------------------------------------------------------|
+| tapEnabled              | Indicates whether the Temporary Access Pass authentication method is enabled for this user. |
+| passkeyEnabled          | Indicates whether the Passkey authentication method is enabled for this user.               |
+
+These user properties are pre-calculated based on the [AZTapInclude], [AZTapExclude], [AZPasskeyInclude], and [AZPasskeyExclude] edges.
+
 ### AZTapInclude Edge
 
 | Property        | Value                    |
 |-----------------|--------------------------|
 | Start node type | [AZGroup]                |
 | End node type   | [AZAuthenticationPolicy] |
+| Transitive      | No                       |
 
 Groups of users that are enabled to use the Temporary Access Pass authentication method.
 
@@ -114,6 +130,7 @@ Groups of users that are enabled to use the Temporary Access Pass authentication
 |-----------------|--------------------------|
 | Start node type | [AZGroup]                |
 | End node type   | [AZAuthenticationPolicy] |
+| Transitive      | No                       |
 
 Groups of users that are excluded from the Temporary Access Pass policy.
 
@@ -123,6 +140,7 @@ Groups of users that are excluded from the Temporary Access Pass policy.
 |-----------------|--------------------------|
 | Start node type | [AZGroup]                |
 | End node type   | [AZAuthenticationPolicy] |
+| Transitive      | No                       |
 
 Groups of users that are enabled to use the Passkey authentication method.
 
@@ -132,6 +150,7 @@ Groups of users that are enabled to use the Passkey authentication method.
 |-----------------|--------------------------|
 | Start node type | [AZGroup]                |
 | End node type   | [AZAuthenticationPolicy] |
+| Transitive      | No                       |
 
 Groups of users that are excluded from the Passkey policy.
 
@@ -161,6 +180,7 @@ Note that passkeys cannot be registered for *AZUser3* because of the [AZPasskeyE
 |-----------------|----------------------|
 | Start node type | [AZServicePrincipal] |
 | End node type   | [AZTenant]           |
+| Transitive      | No                   |
 
 This edge represents the tenant-wide [Policy.ReadWrite.AuthenticationMethod] application permission.
 
@@ -170,18 +190,22 @@ This edge represents the tenant-wide [Policy.ReadWrite.AuthenticationMethod] app
 |-----------------|----------------------------------|
 | Start node type | [AZServicePrincipal] or [AZRole] |
 | End node type   | [AZAuthenticationPolicy]         |
+| Transitive      | Yes                              |
 
 This edge indicates who is in control of the authentication method policies, i.e,
 service principals with the [Policy.ReadWrite.AuthenticationMethod] permission and the [Global Administrator] and [Authentication Policy Administrator] roles.
+
+> [!Note]
+> The current version of BloodHound does not support transitive edges in OpenGraph.
 
 This diagram illustrates the possible relationships:
 
 ```mermaid
 graph LR
-    a1(AZServicePrincipal1) -- AZChangeAuthenticationPolicy --> p((AZAuthenticationPolicy))
+    a1(AZServicePrincipal1) == AZChangeAuthenticationPolicy ==> p((AZAuthenticationPolicy))
     a1(AZServicePrincipal1) -- AZMGPolicy_ReadWrite_AuthenticationMethod --> t{AZTenant}
-    r1(Authentication Policy Administrator) -- AZChangeAuthenticationPolicy --> p
-    r2(Global Administrator) -- AZChangeAuthenticationPolicy --> p
+    r1(Authentication Policy Administrator) == AZChangeAuthenticationPolicy ==> p
+    r2(Global Administrator) == AZChangeAuthenticationPolicy ==> p
     
     p <-- 1:1 --> t
 
@@ -191,12 +215,17 @@ graph LR
     a2(AZServicePrincipal2) -- AZHasRole --> r1
 ```
 
+> [!Note]
+> The 1:1 edge between the authentication policy and tenant is not actually created by the script.
+> The relationship is only represented by the `Tenant ID` property of the policy node.
+
 ### AZMGUserAuthenticationMethod_ReadWrite_All Edge
 
 | Property        | Value                |
 |-----------------|----------------------|
 | Start node type | [AZServicePrincipal] |
 | End node type   | [AZTenant]           |
+| Transitive      | No                   |
 
 This edge represents the tenant-wide [UserAuthenticationMethod.ReadWrite.All] application permission.
 
@@ -206,33 +235,84 @@ This edge represents the tenant-wide [UserAuthenticationMethod.ReadWrite.All] ap
 |-----------------|----------------------|
 | Start node type | [AZServicePrincipal] |
 | End node type   | [AZTenant]           |
+| Transitive      | No                   |
 
 This edge represents the tenant-wide [UserAuthMethod-Passkey.ReadWrite.All] application permission.
 
-### Privileged Roles
+### AZCreateTAP Edge
 
-The following privileged roles can register TAPs and Passkeys for users in their delegation scope:
+| Property        | Value                            |
+|-----------------|----------------------------------|
+| Start node type | [AZServicePrincipal] or [AZRole] |
+| End node type   | [AZUser]                         |
+| Transitive      | Yes                              |
 
-* [Global Administrator]
-* [Authentication Policy Administrator]
-* [Privileged Authentication Administrator]
-* [Authentication Administrator]
+> [!Note]
+> The current version of BloodHound does not support transitive edges in OpenGraph.
 
-Assignments to these roles are collected by [AzureHound] out-of-the-box.
+This edge represents the permission to create new Temporary Access Passes for the target user.
+The edge is created based on the following conditions:
+
+* The TAP method is enabled in the tenant-wide [AZAuthenticationPolicy]. **AND**
+* The TAP policy applies to the target [AZUser]. **AND**
+* The source [AZServicePrincipal] has the [UserAuthenticationMethod.ReadWrite.All] application permission. **OR**
+* The source [AZRole] is [Global Administrator]. **OR**
+* The source [AZRole] is [Privileged Authentication Administrator].
+
+> [!Warning]
+> The [Authentication Administrator] role and administrative units are not yet supported by the tool.
+
+### AZRegisterPasskey Edge
+
+| Property        | Value                            |
+|-----------------|----------------------------------|
+| Start node type | [AZServicePrincipal] or [AZRole] |
+| End node type   | [AZUser]                         |
+| Transitive      | Yes                              |
+
+> [!Note]
+> The current version of BloodHound does not support transitive edges in OpenGraph.
+
+This edge represents the permission to register new Passkeys on behalf of the target user.
+The edge is created based on the following conditions:
+
+* The Passkey method is enabled in the tenant-wide [AZAuthenticationPolicy]. **AND**
+* The Passkey policy applies to the target [AZUser]. **AND**
+* The source [AZServicePrincipal] has the [UserAuthenticationMethod.ReadWrite.All] application permission. **OR**
+* The source [AZServicePrincipal] has the [UserAuthMethod-Passkey.ReadWrite.All] application permission. **OR**
+* The source [AZRole] is [Global Administrator]. **OR**
+* The source [AZRole] is [Privileged Authentication Administrator].
+
+> [!Warning]
+> The [Authentication Administrator] role and administrative units are not yet supported by the tool.
 
 ### Sample User Authentication Method Permissions
 
 ```mermaid
 graph LR
-    a1(AZServicePrincipal1) -- AZMGUserAuthenticationMethod_ReadWrite_All --> t{AZTenant}
-    a2(AZServicePrincipal2) -- AZMGUserAuthenticationMethod_Passkey_ReadWrite_All --> t
-    a2 -- AZMGPolicy_ReadWrite_AuthenticationMethod --> t
-    a3(AZServicePrincipal3) -- AZHasRole --> r1(Privileged Authentication Administrator)
-    u1(AZUser1) -- AZOwns --> a1
-    u2(AZUser2) -- AZOwns --> a2
-    u3(AZUser3) -- AZMGAddSecret --> a3
-    u4(AZUser4) -- AZHasRole --> r1
-    u5(AZUser5) -- AZHasRole --> r2(Authentication Administrator)
+    u1(AZUser1)
+    u2(AZUser2)
+    u3(AZUser3)
+    u4(AZUser4) 
+    u5(AZUser5)
+    a1(AZServicePrincipal1)
+    a2(AZServicePrincipal2)
+    a3(AZServicePrincipal3)
+    r1(Privileged Authentication Administrator)
+    t{AZTenant}
+    a1 -- AZMGUserAuthenticationMethod_ReadWrite_All --> t
+    a2 -- AZMGUserAuthenticationMethod_Passkey_ReadWrite_All --> t
+    a3 -- AZHasRole --> r1
+    r1 -- AZRegisterPasskey --> u5
+    r1 -- AZCreateTAP --> u5
+    a1 -- AZCreateTAP --> u5
+    a1 -- AZRegisterPasskey --> u5
+    a2 -- AZRegisterPasskey --> u5
+    u4 -- AZHasRole --> r1
+    u1 -- AZOwns --> a1
+    u2 -- AZOwns --> a2
+    u3 -- AZMGAddSecret --> a3
+    u5 -- AZGlobalAdmin --> t
 ```
 
 ## Required Entra ID Permissions
@@ -242,6 +322,8 @@ It therefore requires the following Microsoft Graph delegated permissions (OAuth
 
 * [Policy.Read.AuthenticationMethod]
 * [Application.Read.All]
+* [GroupMember.Read.All]
+* [User.ReadBasic.All]
 
 The user executing the script must be assigned at least the [Directory Readers] role.
 
@@ -334,6 +416,15 @@ RETURN p
 
 ![User authentication method write permissions for applications](Screenshots/user-authentication-method-readwrite.png)
 
+Show actors who can create TAPs or Passkeys for a specific user:
+
+```cypher
+MATCH p=(:AZBase)-[:AZCreateTAP|AZRegisterPasskey]->(target:AZUser {name: 'ADELEV@LAB.DSINTERNALS.COM'})
+RETURN p
+```
+
+![User authentication method write permissions on a target account](Screenshots/az-register-tap-passkey.png)
+
 ## Known Issues
 
 ### BloodHound CE Ingestion
@@ -349,29 +440,74 @@ the following code snippet must be deleted first:
 
 Data import would otherwise fail with an error concerning duplicate nodes. This issue is not present when BloodHound is backed by the PostgreSQL database.
 
-### Missing Compound Edges
+### Authentication Administrator Role Support
 
-Non-trivial post-processing of the ingested data would be required
-to determine who can register TAPs and Passkeys for whom,
-similarly to the [AZResetPassword] edge, especially for the [Authentication Administrator] role delegated at the administrative unit level.
-This capability is not available in the current version of BloodHound.
+The [Authentication Administrator] role is not yet supported by the [Get-EntraAuthenticationPolicyData.ps1] PowerShell script, as its logic is harder to implement. The following built-in roles are considered unprivileged by Entra and [Authentication Administrators] can change their authentication methods:
+
+* Authentication Administrator
+* Directory Reader
+* Guest Inviter
+* Message Center Reader
+* Password Administrator
+* Reports Reader
+* User Experience Success Manager
+* Usage Summary Reports Reader
+
+If a user is a member of any other built-in or custom role or is a member or owner of a role-assignable group or has a role scoped to a restricted management administrative unit, then [Authentication Administrators] have no control over them, but [Privileged Authentication Administrators] still do. This behavior is similar to [AZResetPassword].
+
+### Administrative Units
+
+Entra ID administrative units are not yet supported by BloodHound.
+
+### Missing Edge Composition
+
+If the current authentication method policy prevents TAPs or Passkeys to be created for a user,
+but a malicious actor has the permissions to change the policy, they would be still be able to take over the target user's account.
+One such situation is illustrated on the following diagram:
+
+```mermaid
+graph TB
+    u1(AZUser1)
+    u2(AZUser2)
+    a(AZServicePrincipal2)
+    r(Authentication Administrator)
+    g(TAP Excluded)
+    p(AZAuthenticationPolicy)
+    t{AZTenant}
+    u2 -- AZMemberOf --> g
+    g -- AZTapExclude --> p
+    u1 == HasRole ==> r
+    u1 -- AZOwns --> a
+    a == AZChangeAuthenticationPolicy ==> p
+    a -- AZMGPolicy_ReadWrite_AuthenticationMethod --> t
+    u1 -. AZCreateTAP .-> u2
+```
+
+Such edge composition is not yet implemented in this tool, but could be discovered using a custom Cypher query.
 
 [UserAuthenticationMethod.ReadWrite.All]: https://learn.microsoft.com/en-us/graph/permissions-reference#userauthenticationmethodreadwriteall
 [UserAuthMethod-Passkey.ReadWrite.All]: https://learn.microsoft.com/en-us/graph/permissions-reference#userauthmethod-passkeyreadwriteall
 [Policy.Read.AuthenticationMethod]: https://learn.microsoft.com/en-us/graph/permissions-reference#policyreadauthenticationmethod
 [Application.Read.All]: https://learn.microsoft.com/en-us/graph/permissions-reference#applicationreadall
+[GroupMember.Read.All]: https://learn.microsoft.com/en-us/graph/permissions-reference#groupmemberreadall
+[User.ReadBasic.All]: https://learn.microsoft.com/en-us/graph/permissions-reference#userreadbasicall
 [Policy.ReadWrite.AuthenticationMethod]: https://learn.microsoft.com/en-us/graph/permissions-reference#policyreadwriteauthenticationmethod
 [Global Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#global-administrator
+[Global Administrators]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#global-administrator
 [Directory Readers]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#directory-readers
 [Authentication Policy Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#authentication-policy-administrator
+[Authentication Policy Administrators]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#authentication-policy-administrator
 [Privileged Authentication Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#privileged-authentication-administrator
+[Privileged Authentication Administrators]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#privileged-authentication-administrator
 [Authentication Administrator]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#authentication-administrator
+[Authentication Administrators]: https://learn.microsoft.com/en-us/entra/identity/role-based-access-control/permissions-reference#authentication-administrator
 [AzureHound]: https://github.com/SpecterOps/AzureHound
 [AZAuthenticationPolicy]: #azauthenticationpolicy-node
 [AZTenant]: https://bloodhound.specterops.io/resources/nodes/az-tenant
 [AZGroup]: https://bloodhound.specterops.io/resources/nodes/az-group
 [AZServicePrincipal]: https://bloodhound.specterops.io/resources/nodes/az-service-principal
 [AZRole]: https://bloodhound.specterops.io/resources/nodes/az-role
+[AZUser]: https://bloodhound.specterops.io/resources/nodes/az-user
 [AZResetPassword]: https://bloodhound.specterops.io/resources/edges/az-reset-password
 [AZTapInclude]: #aztapinclude-edge
 [AZTapExclude]: #aztapexclude-edge

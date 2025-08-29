@@ -263,6 +263,34 @@ class AZServicePrincipal : AZBase
     }
 }
 
+# Entra ID user
+class AZUser : AZBase
+{
+    AZUser([guid] $userId, [guid] $tenantId) : base($userId, $tenantId, 'AZUser')
+    {
+    }
+
+    [void] SetTapEnabled([bool] $enabled)
+    {
+        $this.properties['tapEnabled'] = $enabled
+    }
+
+    [bool] IsTapEnabled()
+    {
+        return [bool] $this.properties['tapEnabled']
+    }
+
+    [void] SetPasskeyEnabled([bool] $enabled)
+    {
+        $this.properties['passkeyEnabled'] = $enabled
+    }
+
+    [bool] IsPasskeyEnabled()
+    {
+        return [bool] $this.properties['passkeyEnabled']
+    }
+}
+
 # Entra ID tenant
 class AZTenant : AZBase
 {
@@ -308,6 +336,26 @@ class AZAuthenticationPolicy : AZBase
     {
         $this.properties['passkeyIncludesAllUsers'] = $includesAllUsers
     }
+
+    [bool] IsTapEnabled()
+    {
+        return [bool] $this.properties['tapEnabled']
+    }
+
+    [bool] TapIncludesAllUsers()
+    {
+        return [bool] $this.properties['tapIncludesAllUsers']
+    }
+
+    [bool] IsPasskeyEnabled()
+    {
+        return [bool] $this.properties['passkeyEnabled']
+    }
+
+    [bool] PasskeyIncludesAllUsers()
+    {
+        return [bool] $this.properties['passkeyIncludesAllUsers']
+    }
 }
 
 class AZTapInclude : AZEdge
@@ -347,7 +395,15 @@ class AZPasskeyExclude : AZEdge
 
 class AZChangeAuthenticationPolicy : AZEdge
 {
-    AZChangeAuthenticationPolicy([AZBase] $entity, [AZAuthenticationPolicy] $authenticationPolicy) : base($entity, $authenticationPolicy, 'AZChangeAuthenticationPolicy')
+    AZChangeAuthenticationPolicy([AZServicePrincipal] $servicePrincipal, [AZAuthenticationPolicy] $authenticationPolicy) : base($servicePrincipal, $authenticationPolicy, 'AZChangeAuthenticationPolicy')
+    {
+        $this.SetDisplayName('Can change Authentication Method Policy')
+
+        # Add a description linking the AZChangeAuthenticationPolicy edge to the AZMGPolicy_ReadWrite_AuthenticationMethod edge.
+        $this.SetDescription('The application is assigned the Policy.ReadWrite.AuthenticationMethod permission.')
+    }
+
+    AZChangeAuthenticationPolicy([AZRole] $role, [AZAuthenticationPolicy] $authenticationPolicy) : base($role, $authenticationPolicy, 'AZChangeAuthenticationPolicy')
     {
         $this.SetDisplayName('Can change Authentication Method Policy')
     }
@@ -375,6 +431,32 @@ class AZMGUserAuthenticationMethod_Passkey_ReadWrite_All : AZEdge
     AZMGUserAuthenticationMethod_Passkey_ReadWrite_All([AZServicePrincipal] $servicePrincipal, [AZTenant] $tenant) : base($servicePrincipal, $tenant, 'AZMGUserAuthenticationMethod_Passkey_ReadWrite_All')
     {
         $this.SetDisplayName('Microsoft Graph UserAuthenticationMethod-Passkey.ReadWrite.All Application Permission')
+    }
+}
+
+class AZCreateTAP : AZEdge
+{
+    AZCreateTAP([AZRole] $role, [AZUser] $user) : base($role, $user, 'AZCreateTAP')
+    {
+        $this.SetDisplayName('Can create a Temporary Access Pass')
+    }
+
+    AZCreateTAP([AZServicePrincipal] $servicePrincipal, [AZUser] $user) : base($servicePrincipal, $user, 'AZCreateTAP')
+    {
+        $this.SetDisplayName('Can create a Temporary Access Pass')
+    }
+}
+
+class AZRegisterPasskey : AZEdge
+{
+    AZRegisterPasskey([AZRole] $role, [AZUser] $user) : base($role, $user, 'AZRegisterPasskey')
+    {
+        $this.SetDisplayName('Can register a new Passkey')
+    }
+
+    AZRegisterPasskey([AZServicePrincipal] $servicePrincipal, [AZUser] $user) : base($servicePrincipal, $user, 'AZRegisterPasskey')
+    {
+        $this.SetDisplayName('Can register a new Passkey')
     }
 }
 
