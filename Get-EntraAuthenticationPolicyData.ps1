@@ -13,7 +13,7 @@
     Less granular permissions are also available.
 
 .NOTES
-    Version: 2.0
+    Version: 2.1
     Author: Michael Grafnetter
 
 #>
@@ -36,11 +36,12 @@ Connect-MgGraph `
     -Scopes 'Policy.Read.AuthenticationMethod', 'Application.Read.All', 'GroupMember.Read.All', 'User.ReadBasic.All' `
     -ContextScope Process `
     -Environment Global `
-    -NoWelcome -TenantId lab.dsinternals.com
+    -NoWelcome `
+    -ErrorAction Stop
 
 # Get info about the current tenant
 Write-Verbose -Message 'Fetching tenant ID and name...' -Verbose
-[Microsoft.Graph.PowerShell.Models.MicrosoftGraphOrganization] $organization = Get-MgOrganization -Property Id,VerifiedDomains
+[Microsoft.Graph.PowerShell.Models.MicrosoftGraphOrganization] $organization = Get-MgOrganization -Property Id,VerifiedDomains -ErrorAction Stop
 [guid] $tenantId = $organization.Id
 [string] $tenantPrimaryDomain =
     $organization.VerifiedDomains |
@@ -58,14 +59,15 @@ Write-Verbose -Message 'Retrieving TAP policy...' -Verbose
 [pscustomobject] $tapPolicy = Invoke-MgGraphRequest `
     -Method GET `
     -Uri '/v1.0/policies/authenticationMethodsPolicy/authenticationMethodConfigurations/temporaryAccessPass' `
-    -OutputType Json | ConvertFrom-Json
+    -OutputType Json `
+    -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
 
 # Add the TAP policy to the BloodHound OpenGraph
 $authenticationPolicy.SetTapEnabled($tapPolicy.state -eq 'enabled')
 
 [System.Collections.Generic.List[guid]] $tapIncludedGroups = @()
 
-# Traverse the list of groups the TAP policy applies to
+# Process the list of groups the TAP policy applies to
 if ($null -ne $tapPolicy.includeTargets) {
     foreach ($includeTarget in $tapPolicy.includeTargets) {
         if ($includeTarget.id -eq 'all_users') {
@@ -85,7 +87,7 @@ if ($null -ne $tapPolicy.includeTargets) {
 
 [System.Collections.Generic.List[guid]] $tapExcludedGroups = @()
 
-# Traverse the list of groups the TAP policy excludes
+# Process the list of groups the TAP policy excludes
 if ($null -ne $tapPolicy.excludeTargets) {
     foreach ($excludeTarget in $tapPolicy.excludeTargets) {
         # Create the corresponding AZGroup->AZAuthenticationPolicy edge
@@ -103,14 +105,15 @@ Write-Verbose -Message 'Retrieving Passkey (FIDO2) policy...' -Verbose
 [pscustomobject] $passkeyPolicy = Invoke-MgGraphRequest `
     -Method GET `
     -Uri '/v1.0/policies/authenticationMethodsPolicy/authenticationMethodConfigurations/fido2' `
-    -OutputType Json | ConvertFrom-Json
+    -OutputType Json `
+    -ErrorAction Stop | ConvertFrom-Json -ErrorAction Stop
 
 # Add the Passkey policy to the BloodHound OpenGraph
 $authenticationPolicy.SetPasskeyEnabled($passkeyPolicy.state -eq 'enabled')
 
 [System.Collections.Generic.List[guid]] $passkeyIncludedGroups = @()
 
-# Traverse the list of groups the Passkey policy applies to
+# Process the list of groups the Passkey policy applies to
 if ($null -ne $passkeyPolicy.includeTargets) {
     foreach ($includeTarget in $passkeyPolicy.includeTargets) {
         if ($includeTarget.id -eq 'all_users') {
@@ -130,7 +133,7 @@ if ($null -ne $passkeyPolicy.includeTargets) {
 
 [System.Collections.Generic.List[guid]] $passkeyExcludedGroups = @()
 
-# Traverse the list of groups the Passkey policy excludes
+# Process the list of groups the Passkey policy excludes
 if ($null -ne $passkeyPolicy.excludeTargets) {
     foreach ($excludeTarget in $passkeyPolicy.excludeTargets) {
         # Create the corresponding AZGroup->AZAuthenticationPolicy edge
@@ -145,7 +148,7 @@ if ($null -ne $passkeyPolicy.excludeTargets) {
 
 # Determine the list of TAP-enabled users
 Write-Verbose -Message 'Retrieving all users...' -Verbose
-[guid[]] $allUsers = Get-MgUser -All -Property Id | Select-Object -ExpandProperty Id
+[guid[]] $allUsers = Get-MgUser -All -Property Id -ErrorAction Stop | Select-Object -ExpandProperty Id
 
 [System.Collections.Generic.HashSet[guid]] $tapIncludedUsers = @()
 [System.Collections.Generic.HashSet[guid]] $tapExcludedUsers = @()
@@ -157,7 +160,7 @@ if ($authenticationPolicy.IsTapEnabled()) {
         # Resolve nested group memberships for TAP included groups
         foreach ($groupId in $tapIncludedGroups) {
             Write-Verbose -Message "Retrieving transitive group membership of TAP included group $groupId..." -Verbose
-            [guid[]] $groupMembers = Get-MgGroupTransitiveMemberAsUser -GroupId $groupId -Property Id -All | Select-Object -ExpandProperty Id
+            [guid[]] $groupMembers = Get-MgGroupTransitiveMemberAsUser -GroupId $groupId -Property Id -All -ErrorAction Stop | Select-Object -ExpandProperty Id
             $tapIncludedUsers.UnionWith($groupMembers)
         }
     }
@@ -165,7 +168,7 @@ if ($authenticationPolicy.IsTapEnabled()) {
     # Resolve nested group memberships for TAP excluded groups
     foreach ($groupId in $tapExcludedGroups) {
         Write-Verbose -Message "Retrieving transitive group membership of TAP excluded group $groupId..." -Verbose
-        [guid[]] $groupMembers = Get-MgGroupTransitiveMemberAsUser -GroupId $groupId -Property Id -All | Select-Object -ExpandProperty Id
+        [guid[]] $groupMembers = Get-MgGroupTransitiveMemberAsUser -GroupId $groupId -Property Id -All -ErrorAction Stop | Select-Object -ExpandProperty Id
         $tapExcludedUsers.UnionWith($groupMembers)
     }
 }
@@ -181,7 +184,7 @@ if ($authenticationPolicy.IsPasskeyEnabled()) {
         # Resolve nested group memberships for Passkey included groups
         foreach ($groupId in $passkeyIncludedGroups) {
             Write-Verbose -Message "Retrieving transitive group membership of Passkey included group $groupId..." -Verbose
-            [guid[]] $groupMembers = Get-MgGroupTransitiveMemberAsUser -GroupId $groupId -Property Id -All | Select-Object -ExpandProperty Id
+            [guid[]] $groupMembers = Get-MgGroupTransitiveMemberAsUser -GroupId $groupId -Property Id -All -ErrorAction Stop | Select-Object -ExpandProperty Id
             $passkeyIncludedUsers.UnionWith($groupMembers)
         }
     }
@@ -189,7 +192,7 @@ if ($authenticationPolicy.IsPasskeyEnabled()) {
     # Resolve nested group memberships for Passkey excluded groups
     foreach ($groupId in $passkeyExcludedGroups) {
         Write-Verbose -Message "Retrieving transitive group membership of Passkey excluded group $groupId..." -Verbose
-        [guid[]] $groupMembers = Get-MgGroupTransitiveMemberAsUser -GroupId $groupId -Property Id -All | Select-Object -ExpandProperty Id
+        [guid[]] $groupMembers = Get-MgGroupTransitiveMemberAsUser -GroupId $groupId -Property Id -All -ErrorAction Stop | Select-Object -ExpandProperty Id
         $passkeyExcludedUsers.UnionWith($groupMembers)
     }
 }
@@ -227,7 +230,8 @@ foreach ($userId in $allUsers) {
 
 # Fetch all service principal identifiers and application permissions
 Write-Verbose -Message 'Retrieving service principal permissions...' -Verbose
-[Microsoft.Graph.PowerShell.Models.MicrosoftGraphServicePrincipal[]] $servicePrincipals = Get-MgServicePrincipal -All -Property Id,AppId -ExpandProperty AppRoleAssignments
+[Microsoft.Graph.PowerShell.Models.MicrosoftGraphServicePrincipal[]] $servicePrincipals =
+    Get-MgServicePrincipal -All -Property Id,AppId -ExpandProperty AppRoleAssignments -ErrorAction Stop
 
 # Hardcoded App ID of the Microsoft Graph application
 # Note: As an alternative, the Microsoft Graph App ID could be fetched dynamically

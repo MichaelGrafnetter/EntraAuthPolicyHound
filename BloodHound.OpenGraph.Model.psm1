@@ -39,13 +39,13 @@ class BloodHoundOpenGraph
 
     [string] ToJson([bool] $compress = $false)
     {
-        return ConvertTo-Json -InputObject $this -Depth 10 -Compress:$compress
+        return ConvertTo-Json -InputObject $this -Depth 10 -Compress:$compress -ErrorAction Stop
     }
 
     [void] ToJson([string] $filePath, [bool] $compress = $false)
     {
         [string] $json = $this.ToJson($compress)
-        Set-Content -Path $filePath -Value $json -Encoding UTF8
+        Set-Content -Path $filePath -Value $json -Encoding UTF8 -ErrorAction Stop
     }
 }
 
