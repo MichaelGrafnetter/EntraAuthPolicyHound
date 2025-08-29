@@ -158,12 +158,12 @@ Groups of users that are excluded from the Passkey policy.
 
 ```mermaid
 graph LR
-    g1((AZGroup1)) -- AZTapInclude --> P(AZAuthenticationPolicy)
-    g2((AZGroup2)) -- AZTapExclude --> P
+    g1((AZGroup1)) == AZTapInclude ==> P(AZAuthenticationPolicy)
+    g2((AZGroup2)) == AZTapExclude ==> P
     u1(AZUser1) -- AZMemberOf --> g1
 
-    g3((AZGroup3)) -- AZPasskeyInclude --> P(AZAuthenticationPolicy)
-    g4((AZGroup4)) -- AZPasskeyExclude --> P
+    g3((AZGroup3)) == AZPasskeyInclude ==> P(AZAuthenticationPolicy)
+    g4((AZGroup4)) == AZPasskeyExclude ==> P
     u2(AZUser2) -- AZMemberOf --> g3
     g5((AZGroup5)) -- AZMemberOf --> g4
     u3(AZUser3) -- AZMemberOf --> g5
@@ -172,7 +172,7 @@ graph LR
     P <-- 1:1 --> t{AZTenant}
 ```
 
-Note that passkeys cannot be registered for *AZUser3* because of the [AZPasskeyExclude] transitive edge.
+Notice that passkeys cannot be registered for *AZUser3* because of the [AZPasskeyExclude] transitive edge.
 
 ### AZMGPolicy_ReadWrite_AuthenticationMethod Edge
 
@@ -192,11 +192,11 @@ This edge represents the tenant-wide [Policy.ReadWrite.AuthenticationMethod] app
 | End node type   | [AZAuthenticationPolicy]         |
 | Transitive      | Yes                              |
 
-This edge indicates who is in control of the authentication method policies, i.e,
-service principals with the [Policy.ReadWrite.AuthenticationMethod] permission and the [Global Administrator] and [Authentication Policy Administrator] roles.
-
 > [!Note]
 > The current version of BloodHound does not support transitive edges in OpenGraph.
+
+This edge indicates who is in control of the authentication method policies, i.e,
+service principals with the [Policy.ReadWrite.AuthenticationMethod] permission and the [Global Administrator] and [Authentication Policy Administrator] roles.
 
 This diagram illustrates the possible relationships:
 
@@ -303,11 +303,11 @@ graph LR
     a1 -- AZMGUserAuthenticationMethod_ReadWrite_All --> t
     a2 -- AZMGUserAuthenticationMethod_Passkey_ReadWrite_All --> t
     a3 -- AZHasRole --> r1
-    r1 -- AZRegisterPasskey --> u5
-    r1 -- AZCreateTAP --> u5
-    a1 -- AZCreateTAP --> u5
-    a1 -- AZRegisterPasskey --> u5
-    a2 -- AZRegisterPasskey --> u5
+    r1 == AZRegisterPasskey ==> u5
+    r1 == AZCreateTAP ==> u5
+    a1 == AZCreateTAP ==> u5
+    a1 == AZRegisterPasskey ==> u5
+    a2 == AZRegisterPasskey ==> u5
     u4 -- AZHasRole --> r1
     u1 -- AZOwns --> a1
     u2 -- AZOwns --> a2
@@ -469,9 +469,9 @@ One such situation is illustrated on the following diagram:
 graph TB
     u1(AZUser1)
     u2(AZUser2)
-    a(AZServicePrincipal2)
+    a(AZServicePrincipal)
     r(Authentication Administrator)
-    g(TAP Excluded)
+    g(AZGroup)
     p(AZAuthenticationPolicy)
     t{AZTenant}
     u2 -- AZMemberOf --> g
