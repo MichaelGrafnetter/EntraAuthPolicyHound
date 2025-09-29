@@ -1,4 +1,4 @@
-# BloodHound OpenGraph Entra ID Authentication Policy Data Collector
+# EntraAuthPolicyHound: BloodHound OpenGraph Entra ID Authentication Policy Data Collector
 
 ![Applies to BloodHound Enterprise and CE](https://mintlify.s3.us-west-1.amazonaws.com/specterops/assets/enterprise-AND-community-edition-pill-tag.svg)
 
